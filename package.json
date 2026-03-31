@@ -2,7 +2,6 @@
   "name": "virtual-background",
   "version": "0.1.0",
   "description": "Demo on adding virtual background to a live video stream in the browser",
-  "homepage": ".",
   "repository": "https://github.com/Volcomix/virtual-background.git",
   "author": "Volcomix <Volcomix@users.noreply.github.com>",
   "license": "MIT",
@@ -21,22 +20,26 @@
     "@types/node": "^18.11.18",
     "@types/react": "^18.0.27",
     "@types/react-dom": "^18.0.10",
+    "@vue/compiler-sfc": "^3.5.31",
     "clsx": "^1.2.1",
     "gh-pages": "^5.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
     "typescript": "^4.9.4",
+    "vue": "^3.5.31",
     "web-vitals": "^3.1.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "build:tflite": "yarn build:tflite:image && docker run --rm -it -v $PWD:/workspace -w /workspace tflite",
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "build:tflite": "yarn build:tflite:image && node scripts/build-tflite.mjs",
     "build:tflite:image": "docker build -t tflite tflite",
     "test": "react-scripts test",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build",
+    "predeploy": "yarn build",
+    "deploy": "gh-pages -d dist",
     "eject": "react-scripts eject"
   },
   "prettier": {
@@ -60,5 +63,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.5",
+    "vite": "^8.0.3"
   }
 }

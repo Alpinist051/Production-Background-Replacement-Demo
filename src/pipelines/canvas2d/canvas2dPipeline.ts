@@ -5,6 +5,11 @@ import {
   inputResolutions,
   SegmentationConfig,
 } from '../../core/helpers/segmentationHelper'
+import {
+  createSegmentationMaskRefiner,
+  fillPersonMaskProbabilities,
+  getSegmentationMaskRefinementOptions,
+} from '../../core/helpers/segmentationMaskHelper'
 import { CameraPlayback } from '../../core/helpers/cameraHelper'
 import { TFLite } from '../../core/hooks/useTFLite'
 
@@ -28,6 +33,12 @@ export function buildCanvas2dPipeline(
   segmentationMaskCanvas.width = segmentationWidth
   segmentationMaskCanvas.height = segmentationHeight
   const segmentationMaskCtx = segmentationMaskCanvas.getContext('2d')!
+  const segmentationProbabilities = new Float32Array(segmentationPixelCount)
+  const segmentationMaskRefiner = createSegmentationMaskRefiner(
+    segmentationWidth,
+    segmentationHeight,
+    getSegmentationMaskRefinementOptions(segmentationConfig)
+  )
 
   const inputMemoryOffset = tflite._getInputMemoryOffset() / 4
   const outputMemoryOffset = tflite._getOutputMemoryOffset() / 4
@@ -101,8 +112,12 @@ export function buildCanvas2dPipeline(
   async function runBodyPixInference() {
     const segmentation = await bodyPix.segmentPerson(segmentationMaskCanvas)
     for (let i = 0; i < segmentationPixelCount; i++) {
-      // Sets only the alpha component of each pixel
-      segmentationMask.data[i * 4 + 3] = segmentation.data[i] ? 255 : 0
+      segmentationProbabilities[i] = segmentation.data[i]
+    }
+
+    const refinedMask = segmentationMaskRefiner.refine(segmentationProbabilities)
+    for (let i = 0; i < segmentationPixelCount; i++) {
+      segmentationMask.data[i * 4 + 3] = refinedMask[i]
     }
     segmentationMaskCtx.putImageData(segmentationMask, 0, 0)
   }
@@ -110,21 +125,16 @@ export function buildCanvas2dPipeline(
   function runTFLiteInference() {
     tflite._runInference()
 
-    for (let i = 0; i < segmentationPixelCount; i++) {
-      if (segmentationConfig.model === 'meet') {
-        const background = tflite.HEAPF32[outputMemoryOffset + i * 2]
-        const person = tflite.HEAPF32[outputMemoryOffset + i * 2 + 1]
-        const shift = Math.max(background, person)
-        const backgroundExp = Math.exp(background - shift)
-        const personExp = Math.exp(person - shift)
+    fillPersonMaskProbabilities(
+      segmentationConfig.model,
+      tflite,
+      outputMemoryOffset,
+      segmentationProbabilities
+    )
 
-        // Sets only the alpha component of each pixel
-        segmentationMask.data[i * 4 + 3] =
-          (255 * personExp) / (backgroundExp + personExp) // softmax
-      } else if (segmentationConfig.model === 'mlkit') {
-        const person = tflite.HEAPF32[outputMemoryOffset + i]
-        segmentationMask.data[i * 4 + 3] = 255 * person
-      }
+    const refinedMask = segmentationMaskRefiner.refine(segmentationProbabilities)
+    for (let i = 0; i < segmentationPixelCount; i++) {
+      segmentationMask.data[i * 4 + 3] = refinedMask[i]
     }
     segmentationMaskCtx.putImageData(segmentationMask, 0, 0)
   }
@@ -135,9 +145,9 @@ export function buildCanvas2dPipeline(
 
     if (postProcessingConfig?.smoothSegmentationMask) {
       if (backgroundConfig.type === 'blur') {
-        ctx.filter = 'blur(8px)' // FIXME Does not work on Safari
+        ctx.filter = 'blur(2px)' // FIXME Does not work on Safari
       } else if (backgroundConfig.type === 'image') {
-        ctx.filter = 'blur(4px)' // FIXME Does not work on Safari
+        ctx.filter = 'blur(1px)' // FIXME Does not work on Safari
       }
     }
 

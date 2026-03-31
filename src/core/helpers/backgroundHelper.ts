@@ -8,4 +8,4 @@ export const backgroundImageUrls = [
   'porch-691330_1280',
   'saxon-switzerland-539418_1280',
   'shibuyasky-4768679_1280',
-].map((imageName) => `${process.env.PUBLIC_URL}/backgrounds/${imageName}.jpg`)
+].map((imageName) => `${import.meta.env.BASE_URL}backgrounds/${imageName}.jpg`)

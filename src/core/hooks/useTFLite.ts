@@ -72,7 +72,7 @@ function useTFLite(segmentationConfig: SegmentationConfig) {
       console.log('Loading tflite model:', modelFileName)
 
       const modelResponse = await fetch(
-        `${process.env.PUBLIC_URL}/models/${modelFileName}.tflite`
+        `${import.meta.env.BASE_URL}models/${modelFileName}.tflite`
       )
       const model = await modelResponse.arrayBuffer()
       console.log('Model buffer size:', model.byteLength)
