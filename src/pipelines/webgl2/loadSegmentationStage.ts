@@ -2,7 +2,7 @@ import {
   inputResolutions,
   SegmentationConfig,
 } from '../../core/helpers/segmentationHelper'
-import { TFLite } from '../../core/hooks/useTFLite'
+import type { TFLite } from '../../composables/useTFLite'
 import {
   compileShader,
   createPiplelineStageProgram,

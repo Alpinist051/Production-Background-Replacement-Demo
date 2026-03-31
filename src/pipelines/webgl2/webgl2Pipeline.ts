@@ -5,7 +5,7 @@ import {
   SegmentationConfig,
 } from '../../core/helpers/segmentationHelper'
 import { CameraPlayback } from '../../core/helpers/cameraHelper'
-import { TFLite } from '../../core/hooks/useTFLite'
+import type { TFLite } from '../../composables/useTFLite'
 import { TimerWorker } from '../../shared/helpers/timerHelper'
 import { compileShader, createTexture, glsl } from '../helpers/webglHelper'
 import {
@@ -47,7 +47,10 @@ export function buildWebGL2Pipeline(
   const [segmentationWidth, segmentationHeight] =
     inputResolutions[segmentationConfig.inputResolution]
 
-  const gl = canvas.getContext('webgl2')!
+  const gl = canvas.getContext('webgl2')
+  if (!gl) {
+    throw new Error('Unable to create a WebGL2 context')
+  }
 
   const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
 

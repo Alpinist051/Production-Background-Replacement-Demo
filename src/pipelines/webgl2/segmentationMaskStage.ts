@@ -7,9 +7,7 @@ import {
   fillPersonMaskProbabilities,
   getSegmentationMaskRefinementOptions,
 } from '../../core/helpers/segmentationMaskHelper'
-import {
-  type TFLite,
-} from '../../core/hooks/useTFLite'
+import type { TFLite } from '../../composables/useTFLite'
 
 type SegmentationMaskStage = {
   render(): void

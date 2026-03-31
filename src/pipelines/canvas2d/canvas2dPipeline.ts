@@ -11,7 +11,7 @@ import {
   getSegmentationMaskRefinementOptions,
 } from '../../core/helpers/segmentationMaskHelper'
 import { CameraPlayback } from '../../core/helpers/cameraHelper'
-import type { TFLite } from '../../core/hooks/useTFLite'
+import type { TFLite } from '../../composables/useTFLite'
 
 export function buildCanvas2dPipeline(
   cameraPlayback: CameraPlayback,
@@ -22,7 +22,10 @@ export function buildCanvas2dPipeline(
   tflite: TFLite,
   addFrameEvent: () => void
 ) {
-  const ctx = canvas.getContext('2d')!
+  const ctx = canvas.getContext('2d')
+  if (!ctx) {
+    throw new Error('Unable to create a 2D canvas context')
+  }
 
   const [segmentationWidth, segmentationHeight] = inputResolutions[
     segmentationConfig.inputResolution
@@ -110,6 +113,10 @@ export function buildCanvas2dPipeline(
   }
 
   async function runBodyPixInference() {
+    if (typeof bodyPix.segmentPerson !== 'function') {
+      throw new Error('BodyPix model is not ready')
+    }
+
     const segmentation = await bodyPix.segmentPerson(segmentationMaskCanvas)
     for (let i = 0; i < segmentationPixelCount; i++) {
       segmentationProbabilities[i] = segmentation.data[i]

@@ -37,7 +37,7 @@ const postProcessingConfig = ref<PostProcessingConfig>({
   blendMode: 'screen',
 })
 
-const bodyPix = useBodyPix()
+const { bodyPix } = useBodyPix()
 const { tflite, isSIMDSupported } = useTFLite(segmentationConfig)
 
 watch(isSIMDSupported, (supported) => {

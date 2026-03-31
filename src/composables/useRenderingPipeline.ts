@@ -7,7 +7,7 @@ import { BackgroundConfig } from '../core/helpers/backgroundHelper'
 import { RenderingPipeline } from '../core/helpers/renderingPipelineHelper'
 import { SegmentationConfig } from '../core/helpers/segmentationHelper'
 import { CameraPlayback } from '../core/helpers/cameraHelper'
-import { TFLite } from './useTFLite'
+import type { TFLite } from './useTFLite'
 
 export function useRenderingPipeline(
   cameraPlayback: Ref<CameraPlayback | undefined>,
@@ -46,27 +46,49 @@ export function useRenderingPipeline(
 
     const timerWorker = createTimerWorker()
 
-    const newPipeline =
-      segmentation.pipeline === 'webgl2'
-        ? buildWebGL2Pipeline(
-            camera,
-            backgroundImageRef.value,
-            bg,
-            segmentation,
-            canvas,
-            tfliteModel,
-            timerWorker,
-            addFrameEvent
-          )
-        : buildCanvas2dPipeline(
-            camera,
-            bg,
-            segmentation,
-            canvas,
-            bodyPixModel,
-            tfliteModel,
-            addFrameEvent
-          )
+    let newPipeline: RenderingPipeline
+
+    try {
+      newPipeline =
+        segmentation.pipeline === 'webgl2'
+          ? buildWebGL2Pipeline(
+              camera,
+              backgroundImageRef.value,
+              bg,
+              segmentation,
+              canvas,
+              tfliteModel,
+              timerWorker,
+              addFrameEvent
+            )
+          : buildCanvas2dPipeline(
+              camera,
+              bg,
+              segmentation,
+              canvas,
+              bodyPixModel,
+              tfliteModel,
+              addFrameEvent
+            )
+    } catch (error) {
+      if (segmentation.pipeline === 'webgl2') {
+        console.warn(
+          'WebGL2 pipeline unavailable, falling back to Canvas 2D + CPU.',
+          error
+        )
+        newPipeline = buildCanvas2dPipeline(
+          camera,
+          bg,
+          segmentation,
+          canvas,
+          bodyPixModel,
+          tfliteModel,
+          addFrameEvent
+        )
+      } else {
+        throw error
+      }
+    }
 
     async function render() {
       const startTime = performance.now()
