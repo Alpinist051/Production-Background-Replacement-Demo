@@ -1,5 +1,5 @@
-import { BodyPix } from '@tensorflow-models/body-pix'
 import { watchEffect, ref, type Ref } from 'vue'
+import type { BodyPix } from '@tensorflow-models/body-pix'
 import { buildCanvas2dPipeline } from '../pipelines/canvas2d/canvas2dPipeline'
 import { buildWebGL2Pipeline } from '../pipelines/webgl2/webgl2Pipeline'
 import { createTimerWorker } from '../shared/helpers/timerHelper'

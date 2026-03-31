@@ -1,17 +1,17 @@
-import { BodyPix } from '@tensorflow-models/body-pix'
 import { BackgroundConfig } from '../../core/helpers/backgroundHelper'
 import { PostProcessingConfig } from '../../core/helpers/postProcessingHelper'
 import {
   inputResolutions,
   SegmentationConfig,
 } from '../../core/helpers/segmentationHelper'
+import type { BodyPix } from '@tensorflow-models/body-pix'
 import {
   createSegmentationMaskRefiner,
   fillPersonMaskProbabilities,
   getSegmentationMaskRefinementOptions,
 } from '../../core/helpers/segmentationMaskHelper'
 import { CameraPlayback } from '../../core/helpers/cameraHelper'
-import { TFLite } from '../../core/hooks/useTFLite'
+import type { TFLite } from '../../core/hooks/useTFLite'
 
 export function buildCanvas2dPipeline(
   cameraPlayback: CameraPlayback,
