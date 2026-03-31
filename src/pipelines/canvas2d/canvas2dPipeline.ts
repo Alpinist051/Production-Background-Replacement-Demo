@@ -77,6 +77,13 @@ export function buildCanvas2dPipeline(
     postProcessingConfig = newPostProcessingConfig
   }
 
+  function updateBackgroundImage(
+    _backgroundImage: HTMLImageElement | null
+  ) {
+    // The Canvas 2D path reads the image directly from BackgroundConfig.
+    // No separate background image state needs to be refreshed here.
+  }
+
   function cleanUp() {
     // Nothing to clean up in this rendering pipeline
   }
@@ -196,5 +203,10 @@ export function buildCanvas2dPipeline(
     ctx.drawImage(cameraPlayback.htmlElement, 0, 0)
   }
 
-  return { render, updatePostProcessingConfig, cleanUp }
+  return {
+    render,
+    updatePostProcessingConfig,
+    updateBackgroundImage,
+    cleanUp,
+  }
 }

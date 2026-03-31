@@ -5,7 +5,6 @@ export type RenderingPipeline = {
   updatePostProcessingConfig(
     newPostProcessingConfig: PostProcessingConfig
   ): void
-  // TODO Update background image only when loaded
-  // updateBackgroundImage(backgroundImage: HTMLImageElement): void
+  updateBackgroundImage(backgroundImage: HTMLImageElement | null): void
   cleanUp(): void
 }

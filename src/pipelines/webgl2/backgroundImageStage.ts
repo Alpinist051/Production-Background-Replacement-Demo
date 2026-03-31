@@ -11,6 +11,7 @@ export type BackgroundImageStage = {
   updateCoverage(coverage: [number, number]): void
   updateLightWrapping(lightWrapping: number): void
   updateBlendMode(blendMode: BlendMode): void
+  updateBackgroundImage(backgroundImage: HTMLImageElement | null): void
   cleanUp(): void
 }
 
@@ -23,6 +24,8 @@ export function buildBackgroundImageStage(
   canvas: HTMLCanvasElement
 ): BackgroundImageStage {
   let isDisposed = false
+  let currentBackgroundImage: HTMLImageElement | null = null
+  let handleBackgroundImageLoad: (() => void) | null = null
   const vertexShaderSource = glsl`#version 300 es
 
     uniform vec2 u_backgroundScale;
@@ -123,6 +126,7 @@ export function buildBackgroundImageStage(
   gl.uniform1f(blendModeLocation, 0)
   gl.uniform1i(backgroundLocation, 2)
 
+  gl.activeTexture(gl.TEXTURE2)
   const fallbackTexture = createTexture(
     gl,
     gl.RGBA8,
@@ -131,6 +135,7 @@ export function buildBackgroundImageStage(
     gl.NEAREST,
     gl.NEAREST
   )!
+  gl.bindTexture(gl.TEXTURE_2D, fallbackTexture)
   gl.texSubImage2D(
     gl.TEXTURE_2D,
     0,
@@ -144,9 +149,38 @@ export function buildBackgroundImageStage(
   )
 
   let backgroundTexture: WebGLTexture = fallbackTexture
-  let handleBackgroundImageLoad: (() => void) | null = null
+  updateBackgroundImage(backgroundImage)
 
-  if (backgroundImage) {
+  function render() {
+    gl.viewport(0, 0, outputWidth, outputHeight)
+    gl.useProgram(program)
+    gl.activeTexture(gl.TEXTURE1)
+    gl.bindTexture(gl.TEXTURE_2D, personMaskTexture)
+    gl.activeTexture(gl.TEXTURE2)
+    gl.bindTexture(gl.TEXTURE_2D, backgroundTexture)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+  }
+
+  function updateBackgroundImage(backgroundImage: HTMLImageElement | null) {
+    if (isDisposed) {
+      return
+    }
+
+    if (
+      currentBackgroundImage &&
+      handleBackgroundImageLoad
+    ) {
+      currentBackgroundImage.removeEventListener('load', handleBackgroundImageLoad)
+    }
+
+    currentBackgroundImage = backgroundImage
+    handleBackgroundImageLoad = null
+
+    if (!backgroundImage) {
+      return
+    }
+
     handleBackgroundImageLoad = () => {
       if (isDisposed) {
         return
@@ -160,78 +194,58 @@ export function buildBackgroundImageStage(
       backgroundImage.naturalWidth > 0 &&
       backgroundImage.naturalHeight > 0
     ) {
-      handleBackgroundImageLoad()
-    } else {
-      backgroundImage.addEventListener('load', handleBackgroundImageLoad)
-    }
-  }
+      gl.activeTexture(gl.TEXTURE2)
+      const nextTexture = createTexture(
+        gl,
+        gl.RGBA8,
+        backgroundImage.naturalWidth,
+        backgroundImage.naturalHeight,
+        gl.LINEAR,
+        gl.LINEAR
+      )
+      gl.bindTexture(gl.TEXTURE_2D, nextTexture)
+      gl.texSubImage2D(
+        gl.TEXTURE_2D,
+        0,
+        0,
+        0,
+        backgroundImage.naturalWidth,
+        backgroundImage.naturalHeight,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        backgroundImage
+      )
 
-  function render() {
-    gl.viewport(0, 0, outputWidth, outputHeight)
-    gl.useProgram(program)
-    gl.activeTexture(gl.TEXTURE1)
-    gl.bindTexture(gl.TEXTURE_2D, personMaskTexture)
-    gl.activeTexture(gl.TEXTURE2)
-    gl.bindTexture(gl.TEXTURE_2D, backgroundTexture)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-  }
+      const previousTexture = backgroundTexture
+      backgroundTexture = nextTexture
+      if (previousTexture !== fallbackTexture) {
+        gl.deleteTexture(previousTexture)
+      }
 
-  function updateBackgroundImage(backgroundImage: HTMLImageElement) {
-    if (isDisposed) {
+      let xOffset = 0
+      let yOffset = 0
+      let backgroundWidth = backgroundImage.naturalWidth
+      let backgroundHeight = backgroundImage.naturalHeight
+      const backgroundRatio = backgroundWidth / backgroundHeight
+      if (backgroundRatio < outputRatio) {
+        backgroundHeight = backgroundWidth / outputRatio
+        yOffset = (backgroundImage.naturalHeight - backgroundHeight) / 2
+      } else {
+        backgroundWidth = backgroundHeight * outputRatio
+        xOffset = (backgroundImage.naturalWidth - backgroundWidth) / 2
+      }
+
+      const xScale = backgroundWidth / backgroundImage.naturalWidth
+      const yScale = backgroundHeight / backgroundImage.naturalHeight
+      xOffset /= backgroundImage.naturalWidth
+      yOffset /= backgroundImage.naturalHeight
+
+      gl.uniform2f(backgroundScaleLocation, xScale, yScale)
+      gl.uniform2f(backgroundOffsetLocation, xOffset, yOffset)
       return
     }
 
-    if (backgroundImage.naturalWidth === 0 || backgroundImage.naturalHeight === 0) {
-      return
-    }
-
-    const nextTexture = createTexture(
-      gl,
-      gl.RGBA8,
-      backgroundImage.naturalWidth,
-      backgroundImage.naturalHeight,
-      gl.LINEAR,
-      gl.LINEAR
-    )
-    gl.texSubImage2D(
-      gl.TEXTURE_2D,
-      0,
-      0,
-      0,
-      backgroundImage.naturalWidth,
-      backgroundImage.naturalHeight,
-      gl.RGBA,
-      gl.UNSIGNED_BYTE,
-      backgroundImage
-    )
-
-    const previousTexture = backgroundTexture
-    backgroundTexture = nextTexture
-    if (previousTexture !== fallbackTexture) {
-      gl.deleteTexture(previousTexture)
-    }
-
-    let xOffset = 0
-    let yOffset = 0
-    let backgroundWidth = backgroundImage.naturalWidth
-    let backgroundHeight = backgroundImage.naturalHeight
-    const backgroundRatio = backgroundWidth / backgroundHeight
-    if (backgroundRatio < outputRatio) {
-      backgroundHeight = backgroundWidth / outputRatio
-      yOffset = (backgroundImage.naturalHeight - backgroundHeight) / 2
-    } else {
-      backgroundWidth = backgroundHeight * outputRatio
-      xOffset = (backgroundImage.naturalWidth - backgroundWidth) / 2
-    }
-
-    const xScale = backgroundWidth / backgroundImage.naturalWidth
-    const yScale = backgroundHeight / backgroundImage.naturalHeight
-    xOffset /= backgroundImage.naturalWidth
-    yOffset /= backgroundImage.naturalHeight
-
-    gl.uniform2f(backgroundScaleLocation, xScale, yScale)
-    gl.uniform2f(backgroundOffsetLocation, xOffset, yOffset)
+    backgroundImage.addEventListener('load', handleBackgroundImageLoad)
   }
 
   function updateCoverage(coverage: [number, number]) {
@@ -251,8 +265,8 @@ export function buildBackgroundImageStage(
 
   function cleanUp() {
     isDisposed = true
-    if (backgroundImage && handleBackgroundImageLoad) {
-      backgroundImage.removeEventListener('load', handleBackgroundImageLoad)
+    if (currentBackgroundImage && handleBackgroundImageLoad) {
+      currentBackgroundImage.removeEventListener('load', handleBackgroundImageLoad)
     }
     if (backgroundTexture !== fallbackTexture) {
       gl.deleteTexture(backgroundTexture)
@@ -268,6 +282,7 @@ export function buildBackgroundImageStage(
     updateCoverage,
     updateLightWrapping,
     updateBlendMode,
+    updateBackgroundImage,
     cleanUp,
   }
 }

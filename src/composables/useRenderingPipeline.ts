@@ -1,4 +1,4 @@
-import { watchEffect, ref, type Ref } from 'vue'
+import { ref, watch, type Ref } from 'vue'
 import type { BodyPix } from '@tensorflow-models/body-pix'
 import { buildCanvas2dPipeline } from '../pipelines/canvas2d/canvas2dPipeline'
 import { buildWebGL2Pipeline } from '../pipelines/webgl2/webgl2Pipeline'
@@ -28,7 +28,23 @@ export function useRenderingPipeline(
   const durations = ref<number[]>([])
   const emptyHandMask = ref<Uint8Array | null>(null)
 
-  watchEffect((onCleanup) => {
+  watch(
+    [
+      () => cameraPlayback.value?.htmlElement,
+      () => cameraPlayback.value?.width,
+      () => cameraPlayback.value?.height,
+      () => backgroundConfig.value.type,
+      () => segmentationConfig.value.model,
+      () => segmentationConfig.value.backend,
+      () => segmentationConfig.value.inputResolution,
+      () => segmentationConfig.value.pipeline,
+      () => segmentationConfig.value.targetFps,
+      () => segmentationConfig.value.deferInputResizing,
+      bodyPix,
+      tflite,
+      canvasRef,
+    ],
+    (_, __, onCleanup) => {
     const camera = cameraPlayback.value
     const bg = backgroundConfig.value
     const segmentation = segmentationConfig.value
@@ -150,6 +166,7 @@ export function useRenderingPipeline(
     console.log('Animation started:', camera, bg, segmentation)
 
     pipeline.value = newPipeline
+    newPipeline.updateBackgroundImage(backgroundImageRef.value)
 
     onCleanup(() => {
       if (renderTimeoutId !== undefined) {
@@ -160,7 +177,21 @@ export function useRenderingPipeline(
       console.log('Animation stopped:', camera, bg, segmentation)
       pipeline.value = null
     })
-  })
+    },
+    { immediate: true }
+  )
+
+  watch(
+    [backgroundImageRef, () => backgroundConfig.value.url, () => backgroundConfig.value.type],
+    () => {
+      if (backgroundConfig.value.type !== 'image') {
+        return
+      }
+
+      pipeline.value?.updateBackgroundImage(backgroundImageRef.value)
+    },
+    { immediate: true, flush: 'post' }
+  )
 
   return {
     pipeline,

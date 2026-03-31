@@ -145,6 +145,15 @@ export function buildWebGL2Pipeline(
           canvas
         )
 
+  function updateBackgroundImage(backgroundImage: HTMLImageElement | null) {
+    if (backgroundConfig.type !== 'image') {
+      return
+    }
+
+    const backgroundImageStage = backgroundStage as BackgroundImageStage
+    backgroundImageStage.updateBackgroundImage(backgroundImage)
+  }
+
   async function render() {
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, inputFrameTexture)
@@ -220,5 +229,10 @@ export function buildWebGL2Pipeline(
     gl.deleteShader(vertexShader)
   }
 
-  return { render, updatePostProcessingConfig, cleanUp }
+  return {
+    render,
+    updatePostProcessingConfig,
+    updateBackgroundImage,
+    cleanUp,
+  }
 }
