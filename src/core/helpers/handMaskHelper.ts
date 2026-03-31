@@ -36,12 +36,8 @@ const handConnections: Array<[number, number]> = [
   [17, 18],
   [18, 19],
   [19, 20],
-  [5, 9],
-  [9, 13],
-  [13, 17],
 ]
 
-const handOutlineIndices = [0, 1, 2, 3, 4, 8, 12, 16, 20, 17, 13, 9, 5]
 const minHandScore = 0.35
 
 export function createHandMaskRenderer(
@@ -88,7 +84,6 @@ export function createHandMaskRenderer(
 
       const radius = estimateHandRadius(points)
 
-      drawHandOutline(points, ctx)
       drawPalm(points, radius, ctx)
       drawWristBridge(points, radius, ctx)
       drawSkeleton(points, radius, ctx)
@@ -138,28 +133,7 @@ function estimateHandRadius(points: Array<{ x: number; y: number }>) {
     distance(indexMcp, pinkyMcp)
   )
 
-  return clamp(palmSpan * 0.22, 4, 22)
-}
-
-function drawHandOutline(
-  points: Array<{ x: number; y: number }>,
-  ctx: CanvasRenderingContext2D
-) {
-  const outlinePoints = handOutlineIndices
-    .map((index) => points[index])
-    .filter((point): point is { x: number; y: number } => point !== undefined)
-
-  if (outlinePoints.length < 3) {
-    return
-  }
-
-  ctx.beginPath()
-  ctx.moveTo(outlinePoints[0].x, outlinePoints[0].y)
-  for (let i = 1; i < outlinePoints.length; i++) {
-    ctx.lineTo(outlinePoints[i].x, outlinePoints[i].y)
-  }
-  ctx.closePath()
-  ctx.fill()
+  return clamp(palmSpan * 0.18, 3, 18)
 }
 
 function drawPalm(
@@ -188,7 +162,7 @@ function drawPalm(
   center.y /= palmPoints.length
 
   ctx.beginPath()
-  ctx.arc(center.x, center.y, radius * 1.2, 0, Math.PI * 2)
+  ctx.arc(center.x, center.y, radius * 0.95, 0, Math.PI * 2)
   ctx.fill()
 
   for (const index of [0, 1, 2, 3, 4, 5, 9, 13, 17]) {
@@ -198,7 +172,7 @@ function drawPalm(
     }
 
     ctx.beginPath()
-    ctx.arc(point.x, point.y, index === 0 ? radius * 1.15 : radius * 0.8, 0, Math.PI * 2)
+    ctx.arc(point.x, point.y, index === 0 ? radius * 1.0 : radius * 0.5, 0, Math.PI * 2)
     ctx.fill()
   }
 }
@@ -215,14 +189,14 @@ function drawWristBridge(
     return
   }
 
-  ctx.lineWidth = radius * 1.65
+  ctx.lineWidth = radius * 1.2
   ctx.beginPath()
   ctx.moveTo(wrist.x, wrist.y)
   ctx.lineTo(palmCenter.x, palmCenter.y)
   ctx.stroke()
 
   ctx.beginPath()
-  ctx.arc(wrist.x, wrist.y, radius * 1.35, 0, Math.PI * 2)
+  ctx.arc(wrist.x, wrist.y, radius * 1.1, 0, Math.PI * 2)
   ctx.fill()
 }
 
@@ -255,7 +229,7 @@ function drawSkeleton(
   radius: number,
   ctx: CanvasRenderingContext2D
 ) {
-  ctx.lineWidth = radius * 1.15
+  ctx.lineWidth = radius * 0.52
 
   for (const [startIndex, endIndex] of handConnections) {
     const start = points[startIndex]
@@ -273,7 +247,7 @@ function drawSkeleton(
 
   for (const point of points) {
     ctx.beginPath()
-    ctx.arc(point.x, point.y, radius * 0.75, 0, Math.PI * 2)
+    ctx.arc(point.x, point.y, index === 0 ? radius * 0.75 : radius * 0.48, 0, Math.PI * 2)
     ctx.fill()
   }
 }
