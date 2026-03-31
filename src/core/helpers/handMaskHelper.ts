@@ -41,6 +41,7 @@ const handConnections: Array<[number, number]> = [
   [13, 17],
 ]
 
+const handOutlineIndices = [0, 1, 2, 3, 4, 8, 12, 16, 20, 17, 13, 9, 5]
 const minHandScore = 0.35
 
 export function createHandMaskRenderer(
@@ -87,7 +88,9 @@ export function createHandMaskRenderer(
 
       const radius = estimateHandRadius(points)
 
+      drawHandOutline(points, ctx)
       drawPalm(points, radius, ctx)
+      drawWristBridge(points, radius, ctx)
       drawSkeleton(points, radius, ctx)
     }
 
@@ -138,6 +141,27 @@ function estimateHandRadius(points: Array<{ x: number; y: number }>) {
   return clamp(palmSpan * 0.22, 4, 22)
 }
 
+function drawHandOutline(
+  points: Array<{ x: number; y: number }>,
+  ctx: CanvasRenderingContext2D
+) {
+  const outlinePoints = handOutlineIndices
+    .map((index) => points[index])
+    .filter((point): point is { x: number; y: number } => point !== undefined)
+
+  if (outlinePoints.length < 3) {
+    return
+  }
+
+  ctx.beginPath()
+  ctx.moveTo(outlinePoints[0].x, outlinePoints[0].y)
+  for (let i = 1; i < outlinePoints.length; i++) {
+    ctx.lineTo(outlinePoints[i].x, outlinePoints[i].y)
+  }
+  ctx.closePath()
+  ctx.fill()
+}
+
 function drawPalm(
   points: Array<{ x: number; y: number }>,
   radius: number,
@@ -174,9 +198,56 @@ function drawPalm(
     }
 
     ctx.beginPath()
-    ctx.arc(point.x, point.y, radius * 0.8, 0, Math.PI * 2)
+    ctx.arc(point.x, point.y, index === 0 ? radius * 1.15 : radius * 0.8, 0, Math.PI * 2)
     ctx.fill()
   }
+}
+
+function drawWristBridge(
+  points: Array<{ x: number; y: number }>,
+  radius: number,
+  ctx: CanvasRenderingContext2D
+) {
+  const wrist = points[0]
+  const palmCenter = getPalmCenter(points)
+
+  if (!wrist || !palmCenter) {
+    return
+  }
+
+  ctx.lineWidth = radius * 1.65
+  ctx.beginPath()
+  ctx.moveTo(wrist.x, wrist.y)
+  ctx.lineTo(palmCenter.x, palmCenter.y)
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.arc(wrist.x, wrist.y, radius * 1.35, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+function getPalmCenter(points: Array<{ x: number; y: number }>) {
+  const palmPoints = [0, 5, 9, 13, 17]
+    .map((index) => points[index])
+    .filter(
+      (point): point is { x: number; y: number } => point !== undefined
+    )
+
+  if (palmPoints.length === 0) {
+    return null
+  }
+
+  const center = palmPoints.reduce(
+    (acc, point) => ({
+      x: acc.x + point.x,
+      y: acc.y + point.y,
+    }),
+    { x: 0, y: 0 }
+  )
+
+  center.x /= palmPoints.length
+  center.y /= palmPoints.length
+  return center
 }
 
 function drawSkeleton(
