@@ -22,6 +22,7 @@ export function buildBackgroundImageStage(
   backgroundImage: HTMLImageElement | null,
   canvas: HTMLCanvasElement
 ): BackgroundImageStage {
+  let isDisposed = false
   const vertexShaderSource = glsl`#version 300 es
 
     uniform vec2 u_backgroundScale;
@@ -120,14 +121,48 @@ export function buildBackgroundImageStage(
   gl.uniform2f(coverageLocation, 0, 1)
   gl.uniform1f(lightWrappingLocation, 0)
   gl.uniform1f(blendModeLocation, 0)
+  gl.uniform1i(backgroundLocation, 2)
 
-  let backgroundTexture: WebGLTexture | null = null
-  // TODO Find a better to handle background being loaded
-  if (backgroundImage?.complete) {
-    updateBackgroundImage(backgroundImage)
-  } else if (backgroundImage) {
-    backgroundImage.onload = () => {
+  const fallbackTexture = createTexture(
+    gl,
+    gl.RGBA8,
+    1,
+    1,
+    gl.NEAREST,
+    gl.NEAREST
+  )!
+  gl.texSubImage2D(
+    gl.TEXTURE_2D,
+    0,
+    0,
+    0,
+    1,
+    1,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    new Uint8Array([2, 6, 23, 255])
+  )
+
+  let backgroundTexture: WebGLTexture = fallbackTexture
+  let handleBackgroundImageLoad: (() => void) | null = null
+
+  if (backgroundImage) {
+    handleBackgroundImageLoad = () => {
+      if (isDisposed) {
+        return
+      }
+
       updateBackgroundImage(backgroundImage)
+    }
+
+    if (
+      backgroundImage.complete &&
+      backgroundImage.naturalWidth > 0 &&
+      backgroundImage.naturalHeight > 0
+    ) {
+      handleBackgroundImageLoad()
+    } else {
+      backgroundImage.addEventListener('load', handleBackgroundImageLoad)
     }
   }
 
@@ -136,18 +171,22 @@ export function buildBackgroundImageStage(
     gl.useProgram(program)
     gl.activeTexture(gl.TEXTURE1)
     gl.bindTexture(gl.TEXTURE_2D, personMaskTexture)
-    if (backgroundTexture !== null) {
-      gl.activeTexture(gl.TEXTURE2)
-      gl.bindTexture(gl.TEXTURE_2D, backgroundTexture)
-      // TODO Handle correctly the background not loaded yet
-      gl.uniform1i(backgroundLocation, 2)
-    }
+    gl.activeTexture(gl.TEXTURE2)
+    gl.bindTexture(gl.TEXTURE_2D, backgroundTexture)
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
   }
 
   function updateBackgroundImage(backgroundImage: HTMLImageElement) {
-    backgroundTexture = createTexture(
+    if (isDisposed) {
+      return
+    }
+
+    if (backgroundImage.naturalWidth === 0 || backgroundImage.naturalHeight === 0) {
+      return
+    }
+
+    const nextTexture = createTexture(
       gl,
       gl.RGBA8,
       backgroundImage.naturalWidth,
@@ -166,6 +205,12 @@ export function buildBackgroundImageStage(
       gl.UNSIGNED_BYTE,
       backgroundImage
     )
+
+    const previousTexture = backgroundTexture
+    backgroundTexture = nextTexture
+    if (previousTexture !== fallbackTexture) {
+      gl.deleteTexture(previousTexture)
+    }
 
     let xOffset = 0
     let yOffset = 0
@@ -205,7 +250,14 @@ export function buildBackgroundImageStage(
   }
 
   function cleanUp() {
-    gl.deleteTexture(backgroundTexture)
+    isDisposed = true
+    if (backgroundImage && handleBackgroundImageLoad) {
+      backgroundImage.removeEventListener('load', handleBackgroundImageLoad)
+    }
+    if (backgroundTexture !== fallbackTexture) {
+      gl.deleteTexture(backgroundTexture)
+    }
+    gl.deleteTexture(fallbackTexture)
     gl.deleteProgram(program)
     gl.deleteShader(fragmentShader)
     gl.deleteShader(vertexShader)

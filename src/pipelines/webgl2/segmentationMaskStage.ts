@@ -46,7 +46,9 @@ export function buildSegmentationMaskStage(
       segmentationMask[i * 4 + 3] = refinedMask[i]
     }
 
-    gl.activeTexture(gl.TEXTURE0)
+    // Keep texture unit 0 reserved for the live camera frame.
+    // Upload the mask on a different unit so later stages still sample video.
+    gl.activeTexture(gl.TEXTURE3)
     gl.bindTexture(gl.TEXTURE_2D, outputTexture)
     gl.texSubImage2D(
       gl.TEXTURE_2D,

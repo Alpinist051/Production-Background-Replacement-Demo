@@ -168,6 +168,8 @@ export function buildWebGL2Pipeline(
     addFrameEvent()
 
     segmentationMaskStage.render()
+    gl.activeTexture(gl.TEXTURE0)
+    gl.bindTexture(gl.TEXTURE_2D, inputFrameTexture)
     jointBilateralFilterStage.render()
     backgroundStage.render()
   }

@@ -43,6 +43,15 @@ const segmentationConfig = toRef(props, 'segmentationConfig')
 const bodyPix = toRef(props, 'bodyPix')
 const tflite = toRef(props, 'tflite')
 
+const isBackgroundLoading = computed(
+  () =>
+    props.backgroundConfig.type === 'image' &&
+    backgroundImageRef.value !== null &&
+    (!backgroundImageRef.value.complete ||
+      backgroundImageRef.value.naturalWidth === 0 ||
+      backgroundImageRef.value.naturalHeight === 0)
+)
+
 const {
   pipeline,
   backgroundImageRef,
@@ -240,6 +249,9 @@ watch(
       :width="cameraPlayback.width"
       :height="cameraPlayback.height"
     />
+    <div v-if="isBackgroundLoading" class="output-viewer__loading">
+      Loading background...
+    </div>
     <div class="stats-bar">{{ statsText }}</div>
   </div>
 </template>
@@ -264,5 +276,21 @@ watch(
 
 .output-viewer__canvas {
   background: #020617;
+}
+
+.output-viewer__loading {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 2;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid rgba(110, 231, 183, 0.28);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.7);
+  color: var(--text);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px);
 }
 </style>
