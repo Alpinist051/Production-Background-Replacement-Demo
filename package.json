@@ -8,6 +8,7 @@
   "private": true,
   "dependencies": {
     "@tensorflow-models/body-pix": "^2.0.5",
+    "@tensorflow-models/hand-pose-detection": "^2.0.1",
     "@tensorflow/tfjs": "^4.2.0",
     "@types/emscripten": "^1.39.6",
     "@types/node": "^18.11.18",

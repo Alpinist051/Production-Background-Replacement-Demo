@@ -1,3 +1,4 @@
+import type { Ref } from 'vue'
 import {
   type SegmentationConfig,
   inputResolutions,
@@ -7,6 +8,7 @@ import {
   fillPersonMaskProbabilities,
   getSegmentationMaskRefinementOptions,
 } from '../../core/helpers/segmentationMaskHelper'
+import { mergeHandMaskIntoMask } from '../../core/helpers/handMaskHelper'
 import type { TFLite } from '../../composables/useTFLite'
 
 type SegmentationMaskStage = {
@@ -18,6 +20,7 @@ export function buildSegmentationMaskStage(
   gl: WebGL2RenderingContext,
   segmentationConfig: SegmentationConfig,
   tflite: TFLite,
+  handMask: Ref<Uint8Array | null>,
   outputTexture: WebGLTexture
 ): SegmentationMaskStage {
   const [segmentationWidth, segmentationHeight] = inputResolutions[
@@ -42,6 +45,7 @@ export function buildSegmentationMaskStage(
     )
 
     const refinedMask = segmentationMaskRefiner.refine(personProbabilities)
+    mergeHandMaskIntoMask(refinedMask, handMask.value)
     for (let i = 0; i < segmentationPixelCount; i++) {
       segmentationMask[i * 4 + 3] = refinedMask[i]
     }

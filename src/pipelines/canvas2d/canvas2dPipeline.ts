@@ -1,3 +1,4 @@
+import type { Ref } from 'vue'
 import { BackgroundConfig } from '../../core/helpers/backgroundHelper'
 import { PostProcessingConfig } from '../../core/helpers/postProcessingHelper'
 import {
@@ -12,6 +13,7 @@ import {
 } from '../../core/helpers/segmentationMaskHelper'
 import { CameraPlayback } from '../../core/helpers/cameraHelper'
 import type { TFLite } from '../../composables/useTFLite'
+import { mergeHandMaskIntoMask } from '../../core/helpers/handMaskHelper'
 
 export function buildCanvas2dPipeline(
   cameraPlayback: CameraPlayback,
@@ -20,6 +22,7 @@ export function buildCanvas2dPipeline(
   canvas: HTMLCanvasElement,
   bodyPix: BodyPix,
   tflite: TFLite,
+  handMask: Ref<Uint8Array | null>,
   addFrameEvent: () => void
 ) {
   const ctx = canvas.getContext('2d')
@@ -123,6 +126,7 @@ export function buildCanvas2dPipeline(
     }
 
     const refinedMask = segmentationMaskRefiner.refine(segmentationProbabilities)
+    mergeHandMaskIntoMask(refinedMask, handMask.value)
     for (let i = 0; i < segmentationPixelCount; i++) {
       segmentationMask.data[i * 4 + 3] = refinedMask[i]
     }
@@ -140,6 +144,7 @@ export function buildCanvas2dPipeline(
     )
 
     const refinedMask = segmentationMaskRefiner.refine(segmentationProbabilities)
+    mergeHandMaskIntoMask(refinedMask, handMask.value)
     for (let i = 0; i < segmentationPixelCount; i++) {
       segmentationMask.data[i * 4 + 3] = refinedMask[i]
     }

@@ -6,6 +6,7 @@ import { type PostProcessingConfig } from '../helpers/postProcessingHelper'
 import { type SegmentationConfig } from '../helpers/segmentationHelper'
 import { type CameraPlayback } from '../helpers/cameraHelper'
 import { useRenderingPipeline } from '../../composables/useRenderingPipeline'
+import { useHandDetection } from '../../composables/useHandDetection'
 import type { TFLite } from '../../composables/useTFLite'
 
 type OfferSignal = {
@@ -42,6 +43,7 @@ const backgroundConfig = toRef(props, 'backgroundConfig')
 const segmentationConfig = toRef(props, 'segmentationConfig')
 const bodyPix = toRef(props, 'bodyPix')
 const tflite = toRef(props, 'tflite')
+const handDetection = useHandDetection()
 
 const isBackgroundLoading = computed(
   () =>
@@ -63,7 +65,8 @@ const {
   backgroundConfig,
   segmentationConfig,
   bodyPix,
-  tflite
+  tflite,
+  handDetection
 )
 
 watch(

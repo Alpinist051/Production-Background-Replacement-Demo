@@ -4,8 +4,12 @@ import { buildCanvas2dPipeline } from '../pipelines/canvas2d/canvas2dPipeline'
 import { buildWebGL2Pipeline } from '../pipelines/webgl2/webgl2Pipeline'
 import { createTimerWorker } from '../shared/helpers/timerHelper'
 import { BackgroundConfig } from '../core/helpers/backgroundHelper'
+import type { HandDetectionController } from './useHandDetection'
 import { RenderingPipeline } from '../core/helpers/renderingPipelineHelper'
-import { SegmentationConfig } from '../core/helpers/segmentationHelper'
+import {
+  inputResolutions,
+  SegmentationConfig,
+} from '../core/helpers/segmentationHelper'
 import { CameraPlayback } from '../core/helpers/cameraHelper'
 import type { TFLite } from './useTFLite'
 
@@ -14,13 +18,15 @@ export function useRenderingPipeline(
   backgroundConfig: Ref<BackgroundConfig>,
   segmentationConfig: Ref<SegmentationConfig>,
   bodyPix: Ref<BodyPix | undefined>,
-  tflite: Ref<TFLite | undefined>
+  tflite: Ref<TFLite | undefined>,
+  handDetection?: HandDetectionController
 ) {
   const pipeline = ref<RenderingPipeline | null>(null)
   const backgroundImageRef = ref<HTMLImageElement | null>(null)
   const canvasRef = ref<HTMLCanvasElement | null>(null)
   const fps = ref(0)
   const durations = ref<number[]>([])
+  const emptyHandMask = ref<Uint8Array | null>(null)
 
   watchEffect((onCleanup) => {
     const camera = cameraPlayback.value
@@ -34,6 +40,9 @@ export function useRenderingPipeline(
       pipeline.value = null
       return
     }
+
+    const [segmentationWidth, segmentationHeight] =
+      inputResolutions[segmentation.inputResolution]
 
     const targetTimerTimeoutMs = 1000 / segmentation.targetFps
 
@@ -58,6 +67,7 @@ export function useRenderingPipeline(
               segmentation,
               canvas,
               tfliteModel,
+              handDetection?.handMask ?? emptyHandMask,
               timerWorker,
               addFrameEvent
             )
@@ -68,6 +78,7 @@ export function useRenderingPipeline(
               canvas,
               bodyPixModel,
               tfliteModel,
+              handDetection?.handMask ?? emptyHandMask,
               addFrameEvent
             )
     } catch (error) {
@@ -83,6 +94,7 @@ export function useRenderingPipeline(
           canvas,
           bodyPixModel,
           tfliteModel,
+          handDetection?.handMask ?? emptyHandMask,
           addFrameEvent
         )
       } else {
@@ -94,6 +106,13 @@ export function useRenderingPipeline(
       const startTime = performance.now()
 
       beginFrame()
+      if (handDetection) {
+        void handDetection.detectHands(
+          camera.htmlElement,
+          segmentationWidth,
+          segmentationHeight
+        )
+      }
       await newPipeline.render()
       endFrame()
 

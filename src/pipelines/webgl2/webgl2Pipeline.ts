@@ -1,3 +1,4 @@
+import type { Ref } from 'vue'
 import { BackgroundConfig } from '../../core/helpers/backgroundHelper'
 import { PostProcessingConfig } from '../../core/helpers/postProcessingHelper'
 import {
@@ -27,6 +28,7 @@ export function buildWebGL2Pipeline(
   segmentationConfig: SegmentationConfig,
   canvas: HTMLCanvasElement,
   tflite: TFLite,
+  handMask: Ref<Uint8Array | null>,
   timerWorker: TimerWorker,
   addFrameEvent: () => void
 ) {
@@ -111,6 +113,7 @@ export function buildWebGL2Pipeline(
     gl,
     segmentationConfig,
     tflite,
+    handMask,
     segmentationTexture
   )
   const jointBilateralFilterStage = buildJointBilateralFilterStage(
