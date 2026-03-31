@@ -5,12 +5,12 @@ import { useEffect } from 'react'
 import { BackgroundConfig } from '../helpers/backgroundHelper'
 import { PostProcessingConfig } from '../helpers/postProcessingHelper'
 import { SegmentationConfig } from '../helpers/segmentationHelper'
-import { SourcePlayback } from '../helpers/sourceHelper'
+import { CameraPlayback } from '../helpers/cameraHelper'
 import useRenderingPipeline from '../hooks/useRenderingPipeline'
 import { TFLite } from '../hooks/useTFLite'
 
 type OutputViewerProps = {
-  sourcePlayback: SourcePlayback
+  cameraPlayback: CameraPlayback
   backgroundConfig: BackgroundConfig
   segmentationConfig: SegmentationConfig
   postProcessingConfig: PostProcessingConfig
@@ -27,7 +27,7 @@ function OutputViewer(props: OutputViewerProps) {
     fps,
     durations: [resizingDuration, inferenceDuration, postProcessingDuration],
   } = useRenderingPipeline(
-    props.sourcePlayback,
+    props.cameraPlayback,
     props.backgroundConfig,
     props.segmentationConfig,
     props.bodyPix,
@@ -106,8 +106,8 @@ function OutputViewer(props: OutputViewerProps) {
         key={props.segmentationConfig.pipeline}
         ref={canvasRef}
         className={classes.render}
-        width={props.sourcePlayback.width}
-        height={props.sourcePlayback.height}
+        width={props.cameraPlayback.width}
+        height={props.cameraPlayback.height}
       />
       <Typography className={classes.stats} variant="caption">
         {stats}

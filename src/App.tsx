@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import BackgroundConfigCard from './core/components/BackgroundConfigCard'
 import PostProcessingConfigCard from './core/components/PostProcessingConfigCard'
 import SegmentationConfigCard from './core/components/SegmentationConfigCard'
-import SourceConfigCard from './core/components/SourceConfigCard'
 import ViewerCard from './core/components/ViewerCard'
 import {
   BackgroundConfig,
@@ -11,16 +10,11 @@ import {
 } from './core/helpers/backgroundHelper'
 import { PostProcessingConfig } from './core/helpers/postProcessingHelper'
 import { SegmentationConfig } from './core/helpers/segmentationHelper'
-import { SourceConfig, sourceImageUrls } from './core/helpers/sourceHelper'
 import useBodyPix from './core/hooks/useBodyPix'
 import useTFLite from './core/hooks/useTFLite'
 
 function App() {
   const classes = useStyles()
-  const [sourceConfig, setSourceConfig] = useState<SourceConfig>({
-    type: 'image',
-    url: sourceImageUrls[0],
-  })
   const [backgroundConfig, setBackgroundConfig] = useState<BackgroundConfig>({
     type: 'image',
     url: backgroundImageUrls[0],
@@ -58,14 +52,12 @@ function App() {
   return (
     <div className={classes.root}>
       <ViewerCard
-        sourceConfig={sourceConfig}
         backgroundConfig={backgroundConfig}
         segmentationConfig={segmentationConfig}
         postProcessingConfig={postProcessingConfig}
         bodyPix={bodyPix}
         tflite={tflite}
       />
-      <SourceConfigCard config={sourceConfig} onChange={setSourceConfig} />
       <BackgroundConfigCard
         config={backgroundConfig}
         onChange={setBackgroundConfig}
@@ -104,10 +96,6 @@ const useStyles = makeStyles((theme: Theme) =>
       [theme.breakpoints.up('lg')]: {
         gridTemplateColumns: 'repeat(3, 1fr)',
       },
-    },
-    resourceSelectionCards: {
-      display: 'flex',
-      flexDirection: 'column',
     },
   })
 )

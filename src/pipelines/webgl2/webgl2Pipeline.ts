@@ -4,7 +4,7 @@ import {
   inputResolutions,
   SegmentationConfig,
 } from '../../core/helpers/segmentationHelper'
-import { SourcePlayback } from '../../core/helpers/sourceHelper'
+import { CameraPlayback } from '../../core/helpers/cameraHelper'
 import { TFLite } from '../../core/hooks/useTFLite'
 import { TimerWorker } from '../../shared/helpers/timerHelper'
 import { compileShader, createTexture, glsl } from '../helpers/webglHelper'
@@ -22,7 +22,7 @@ import { buildResizingStage } from './resizingStage'
 import { buildSoftmaxStage } from './softmaxStage'
 
 export function buildWebGL2Pipeline(
-  sourcePlayback: SourcePlayback,
+  cameraPlayback: CameraPlayback,
   backgroundImage: HTMLImageElement | null,
   backgroundConfig: BackgroundConfig,
   segmentationConfig: SegmentationConfig,
@@ -44,7 +44,7 @@ export function buildWebGL2Pipeline(
     }
   `
 
-  const { width: frameWidth, height: frameHeight } = sourcePlayback
+  const { width: frameWidth, height: frameHeight } = cameraPlayback
   const [segmentationWidth, segmentationHeight] =
     inputResolutions[segmentationConfig.inputResolution]
 
@@ -166,7 +166,7 @@ export function buildWebGL2Pipeline(
       gl.RGBA,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
-      sourcePlayback.htmlElement
+      cameraPlayback.htmlElement
     )
 
     gl.bindVertexArray(vertexArray)

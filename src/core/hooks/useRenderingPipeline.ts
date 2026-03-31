@@ -6,11 +6,11 @@ import { createTimerWorker } from '../../shared/helpers/timerHelper'
 import { BackgroundConfig } from '../helpers/backgroundHelper'
 import { RenderingPipeline } from '../helpers/renderingPipelineHelper'
 import { SegmentationConfig } from '../helpers/segmentationHelper'
-import { SourcePlayback } from '../helpers/sourceHelper'
+import { CameraPlayback } from '../helpers/cameraHelper'
 import { TFLite } from './useTFLite'
 
 function useRenderingPipeline(
-  sourcePlayback: SourcePlayback,
+  cameraPlayback: CameraPlayback,
   backgroundConfig: BackgroundConfig,
   segmentationConfig: SegmentationConfig,
   bodyPix: BodyPix,
@@ -38,7 +38,7 @@ function useRenderingPipeline(
     const newPipeline =
       segmentationConfig.pipeline === 'webgl2'
         ? buildWebGL2Pipeline(
-            sourcePlayback,
+            cameraPlayback,
             backgroundImageRef.current,
             backgroundConfig,
             segmentationConfig,
@@ -48,7 +48,7 @@ function useRenderingPipeline(
             addFrameEvent
           )
         : buildCanvas2dPipeline(
-            sourcePlayback,
+            cameraPlayback,
             backgroundConfig,
             segmentationConfig,
             canvasRef.current,
@@ -97,7 +97,7 @@ function useRenderingPipeline(
     render()
     console.log(
       'Animation started:',
-      sourcePlayback,
+      cameraPlayback,
       backgroundConfig,
       segmentationConfig
     )
@@ -110,14 +110,14 @@ function useRenderingPipeline(
       newPipeline.cleanUp()
       console.log(
         'Animation stopped:',
-        sourcePlayback,
+        cameraPlayback,
         backgroundConfig,
         segmentationConfig
       )
 
       setPipeline(null)
     }
-  }, [sourcePlayback, backgroundConfig, segmentationConfig, bodyPix, tflite])
+  }, [cameraPlayback, backgroundConfig, segmentationConfig, bodyPix, tflite])
 
   return {
     pipeline,

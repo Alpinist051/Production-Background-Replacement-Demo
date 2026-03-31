@@ -2,17 +2,16 @@ import Avatar from '@material-ui/core/Avatar'
 import Paper from '@material-ui/core/Paper'
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
 import { BodyPix } from '@tensorflow-models/body-pix'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { BackgroundConfig } from '../helpers/backgroundHelper'
 import { PostProcessingConfig } from '../helpers/postProcessingHelper'
 import { SegmentationConfig } from '../helpers/segmentationHelper'
-import { SourceConfig, SourcePlayback } from '../helpers/sourceHelper'
+import { CameraPlayback } from '../helpers/cameraHelper'
 import { TFLite } from '../hooks/useTFLite'
 import OutputViewer from './OutputViewer'
-import SourceViewer from './SourceViewer'
+import CameraViewer from './CameraViewer'
 
 type ViewerCardProps = {
-  sourceConfig: SourceConfig
   backgroundConfig: BackgroundConfig
   segmentationConfig: SegmentationConfig
   postProcessingConfig: PostProcessingConfig
@@ -22,21 +21,14 @@ type ViewerCardProps = {
 
 function ViewerCard(props: ViewerCardProps) {
   const classes = useStyles()
-  const [sourcePlayback, setSourcePlayback] = useState<SourcePlayback>()
-
-  useEffect(() => {
-    setSourcePlayback(undefined)
-  }, [props.sourceConfig])
+  const [cameraPlayback, setCameraPlayback] = useState<CameraPlayback>()
 
   return (
     <Paper className={classes.root}>
-      <SourceViewer
-        sourceConfig={props.sourceConfig}
-        onLoad={setSourcePlayback}
-      />
-      {sourcePlayback && props.bodyPix && props.tflite ? (
+      <CameraViewer onLoad={setCameraPlayback} />
+      {cameraPlayback && props.bodyPix && props.tflite ? (
         <OutputViewer
-          sourcePlayback={sourcePlayback}
+          cameraPlayback={cameraPlayback}
           backgroundConfig={props.backgroundConfig}
           segmentationConfig={props.segmentationConfig}
           postProcessingConfig={props.postProcessingConfig}

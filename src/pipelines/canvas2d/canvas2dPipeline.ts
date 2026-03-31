@@ -5,11 +5,11 @@ import {
   inputResolutions,
   SegmentationConfig,
 } from '../../core/helpers/segmentationHelper'
-import { SourcePlayback } from '../../core/helpers/sourceHelper'
+import { CameraPlayback } from '../../core/helpers/cameraHelper'
 import { TFLite } from '../../core/hooks/useTFLite'
 
 export function buildCanvas2dPipeline(
-  sourcePlayback: SourcePlayback,
+  cameraPlayback: CameraPlayback,
   backgroundConfig: BackgroundConfig,
   segmentationConfig: SegmentationConfig,
   canvas: HTMLCanvasElement,
@@ -36,7 +36,7 @@ export function buildCanvas2dPipeline(
 
   async function render() {
     if (backgroundConfig.type !== 'none') {
-      resizeSource()
+      resizeCameraFrame()
     }
 
     addFrameEvent()
@@ -64,13 +64,13 @@ export function buildCanvas2dPipeline(
     // Nothing to clean up in this rendering pipeline
   }
 
-  function resizeSource() {
+  function resizeCameraFrame() {
     segmentationMaskCtx.drawImage(
-      sourcePlayback.htmlElement,
+      cameraPlayback.htmlElement,
       0,
       0,
-      sourcePlayback.width,
-      sourcePlayback.height,
+      cameraPlayback.width,
+      cameraPlayback.height,
       0,
       0,
       segmentationWidth,
@@ -147,7 +147,7 @@ export function buildCanvas2dPipeline(
       ctx.filter = 'none'
     }
 
-    ctx.drawImage(sourcePlayback.htmlElement, 0, 0)
+    ctx.drawImage(cameraPlayback.htmlElement, 0, 0)
 
     if (backgroundConfig.type === 'blur') {
       blurBackground()
@@ -163,15 +163,15 @@ export function buildCanvas2dPipeline(
       segmentationHeight,
       0,
       0,
-      sourcePlayback.width,
-      sourcePlayback.height
+      cameraPlayback.width,
+      cameraPlayback.height
     )
   }
 
   function blurBackground() {
     ctx.globalCompositeOperation = 'destination-over'
     ctx.filter = 'blur(8px)' // FIXME Does not work on Safari
-    ctx.drawImage(sourcePlayback.htmlElement, 0, 0)
+    ctx.drawImage(cameraPlayback.htmlElement, 0, 0)
   }
 
   return { render, updatePostProcessingConfig, cleanUp }
