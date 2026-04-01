@@ -159,7 +159,7 @@ function estimateHandRadius(points: Array<{ x: number; y: number }>) {
     distance(indexMcp, pinkyMcp)
   )
 
-  return clamp(palmSpan * 0.18, 3, 18)
+  return clamp(palmSpan * 0.15, 2.25, 15)
 }
 
 function drawHandSilhouette(
@@ -209,7 +209,7 @@ function drawPalm(
   center.y /= palmPoints.length
 
   ctx.beginPath()
-  ctx.arc(center.x, center.y, radius * 1.0, 0, Math.PI * 2)
+  ctx.arc(center.x, center.y, radius * 0.8, 0, Math.PI * 2)
   ctx.fill()
 
   for (const index of [0, 1, 2, 3, 4, 5, 9, 13, 17]) {
@@ -219,7 +219,7 @@ function drawPalm(
     }
 
     ctx.beginPath()
-    ctx.arc(point.x, point.y, index === 0 ? radius * 1.0 : radius * 0.55, 0, Math.PI * 2)
+    ctx.arc(point.x, point.y, index === 0 ? radius * 0.82 : radius * 0.38, 0, Math.PI * 2)
     ctx.fill()
   }
 }
@@ -236,14 +236,14 @@ function drawWristBridge(
     return
   }
 
-  ctx.lineWidth = radius * 1.1
+  ctx.lineWidth = radius * 0.8
   ctx.beginPath()
   ctx.moveTo(wrist.x, wrist.y)
   ctx.lineTo(palmCenter.x, palmCenter.y)
   ctx.stroke()
 
   ctx.beginPath()
-  ctx.arc(wrist.x, wrist.y, radius * 1.0, 0, Math.PI * 2)
+  ctx.arc(wrist.x, wrist.y, radius * 0.8, 0, Math.PI * 2)
   ctx.fill()
 }
 
@@ -276,7 +276,7 @@ function drawSkeleton(
   radius: number,
   ctx: CanvasRenderingContext2D
 ) {
-  ctx.lineWidth = radius * 0.8
+  ctx.lineWidth = radius * 0.55
 
   for (const [startIndex, endIndex] of handConnections) {
     const start = points[startIndex]
@@ -294,7 +294,7 @@ function drawSkeleton(
 
   for (const point of points) {
     ctx.beginPath()
-    ctx.arc(point.x, point.y, radius * 0.5, 0, Math.PI * 2)
+    ctx.arc(point.x, point.y, radius * 0.28, 0, Math.PI * 2)
     ctx.fill()
   }
 }

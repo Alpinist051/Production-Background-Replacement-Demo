@@ -32,8 +32,8 @@ export function useHandDetection(): HandDetectionController {
   let isLoading = false
   let isDetecting = false
   let lastDetectionAt = 0
-  const detectorInputMaxDimension = 320
-  const minDetectionIntervalMs = 16
+  const detectorInputMaxDimension = 288
+  const minDetectionIntervalMs = 0
 
   onMounted(() => {
     void loadHandDetector()
