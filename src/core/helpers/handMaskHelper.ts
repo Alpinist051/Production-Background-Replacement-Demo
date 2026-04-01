@@ -41,8 +41,8 @@ const handConnections: Array<[number, number]> = [
   [13, 17],
 ]
 
-const handOutlineIndices = [0, 1, 2, 3, 4, 8, 12, 16, 20, 17, 13, 9, 5]
 const minHandScore = 0.35
+const handMaskCloseRadius = 1
 
 export function createHandMaskRenderer(
   width: number,
@@ -58,6 +58,8 @@ export function createHandMaskRenderer(
   }
 
   const mask = new Uint8Array(width * height)
+  const supportMask = new Uint8Array(width * height)
+  const scratchMask = new Uint8Array(width * height)
   const scaleX = width
   const scaleY = height
 
@@ -88,7 +90,7 @@ export function createHandMaskRenderer(
 
       const radius = estimateHandRadius(points)
 
-      drawHandOutline(points, ctx)
+      drawHandSilhouette(points, ctx)
       drawPalm(points, radius, ctx)
       drawWristBridge(points, radius, ctx)
       drawSkeleton(points, radius, ctx)
@@ -96,7 +98,25 @@ export function createHandMaskRenderer(
 
     const imageData = ctx.getImageData(0, 0, width, height)
     for (let i = 0; i < mask.length; i++) {
-      mask[i] = imageData.data[i * 4 + 3]
+      const alpha = imageData.data[i * 4 + 3]
+      mask[i] = alpha
+      supportMask[i] = alpha > 0 ? 1 : 0
+    }
+
+    if (handMaskCloseRadius > 0) {
+      closeMask(
+        supportMask,
+        scratchMask,
+        width,
+        height,
+        handMaskCloseRadius
+      )
+
+      for (let i = 0; i < mask.length; i++) {
+        if (supportMask[i] === 0) {
+          mask[i] = 0
+        }
+      }
     }
 
     return mask
@@ -141,22 +161,20 @@ function estimateHandRadius(points: Array<{ x: number; y: number }>) {
   return clamp(palmSpan * 0.22, 4, 22)
 }
 
-function drawHandOutline(
+function drawHandSilhouette(
   points: Array<{ x: number; y: number }>,
   ctx: CanvasRenderingContext2D
 ) {
-  const outlinePoints = handOutlineIndices
-    .map((index) => points[index])
-    .filter((point): point is { x: number; y: number } => point !== undefined)
+  const hull = buildConvexHull(points)
 
-  if (outlinePoints.length < 3) {
+  if (hull.length < 3) {
     return
   }
 
   ctx.beginPath()
-  ctx.moveTo(outlinePoints[0].x, outlinePoints[0].y)
-  for (let i = 1; i < outlinePoints.length; i++) {
-    ctx.lineTo(outlinePoints[i].x, outlinePoints[i].y)
+  ctx.moveTo(hull[0].x, hull[0].y)
+  for (let i = 1; i < hull.length; i++) {
+    ctx.lineTo(hull[i].x, hull[i].y)
   }
   ctx.closePath()
   ctx.fill()
@@ -275,6 +293,124 @@ function drawSkeleton(
     ctx.beginPath()
     ctx.arc(point.x, point.y, radius * 0.75, 0, Math.PI * 2)
     ctx.fill()
+  }
+}
+
+function buildConvexHull(points: Array<{ x: number; y: number }>) {
+  const sortedPoints = [...points].sort(
+    (a, b) => a.x - b.x || a.y - b.y
+  )
+
+  if (sortedPoints.length < 3) {
+    return sortedPoints
+  }
+
+  const hull: Array<{ x: number; y: number }> = []
+
+  for (const point of sortedPoints) {
+    while (hull.length >= 2 && cross(hull[hull.length - 2], hull[hull.length - 1], point) <= 0) {
+      hull.pop()
+    }
+    hull.push(point)
+  }
+
+  const lowerHullLength = hull.length
+
+  for (let i = sortedPoints.length - 2; i >= 0; i--) {
+    const point = sortedPoints[i]
+    while (
+      hull.length > lowerHullLength &&
+      cross(hull[hull.length - 2], hull[hull.length - 1], point) <= 0
+    ) {
+      hull.pop()
+    }
+    hull.push(point)
+  }
+
+  hull.pop()
+  return hull
+}
+
+function closeMask(
+  source: Uint8Array,
+  destination: Uint8Array,
+  width: number,
+  height: number,
+  radius: number
+) {
+  dilateMask(source, destination, width, height, radius)
+  erodeMask(destination, source, width, height, radius)
+}
+
+function cross(
+  origin: { x: number; y: number },
+  a: { x: number; y: number },
+  b: { x: number; y: number }
+) {
+  return (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x)
+}
+
+function erodeMask(
+  source: Uint8Array,
+  destination: Uint8Array,
+  width: number,
+  height: number,
+  radius: number
+) {
+  for (let y = 0; y < height; y++) {
+    const minY = Math.max(0, y - radius)
+    const maxY = Math.min(height - 1, y + radius)
+
+    for (let x = 0; x < width; x++) {
+      const minX = Math.max(0, x - radius)
+      const maxX = Math.min(width - 1, x + radius)
+
+      let keep = 1
+
+      outer: for (let yy = minY; yy <= maxY; yy++) {
+        const rowOffset = yy * width
+        for (let xx = minX; xx <= maxX; xx++) {
+          if (source[rowOffset + xx] === 0) {
+            keep = 0
+            break outer
+          }
+        }
+      }
+
+      destination[y * width + x] = keep
+    }
+  }
+}
+
+function dilateMask(
+  source: Uint8Array,
+  destination: Uint8Array,
+  width: number,
+  height: number,
+  radius: number
+) {
+  for (let y = 0; y < height; y++) {
+    const minY = Math.max(0, y - radius)
+    const maxY = Math.min(height - 1, y + radius)
+
+    for (let x = 0; x < width; x++) {
+      const minX = Math.max(0, x - radius)
+      const maxX = Math.min(width - 1, x + radius)
+
+      let fill = 0
+
+      outer: for (let yy = minY; yy <= maxY; yy++) {
+        const rowOffset = yy * width
+        for (let xx = minX; xx <= maxX; xx++) {
+          if (source[rowOffset + xx] !== 0) {
+            fill = 1
+            break outer
+          }
+        }
+      }
+
+      destination[y * width + x] = fill
+    }
   }
 }
 
