@@ -23,7 +23,7 @@ const backgroundConfig = ref<BackgroundConfig>({
 const segmentationConfig = ref<SegmentationConfig>({
   model: 'meet',
   backend: 'wasm',
-  inputResolution: '160x96',
+  inputResolution: '256x144',
   pipeline: 'webgl2',
   targetFps: 65,
   deferInputResizing: true,

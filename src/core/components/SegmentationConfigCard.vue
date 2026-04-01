@@ -35,7 +35,7 @@ function handleModelChange(event: Event) {
         (inputResolution !== '256x144' && inputResolution !== '160x96')
       ) {
         backend = props.isSIMDSupported ? 'wasmSimd' : 'wasm'
-        inputResolution = '160x96'
+        inputResolution = '256x144'
         pipeline = 'webgl2'
       }
       break
