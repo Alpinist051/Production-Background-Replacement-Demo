@@ -41,8 +41,9 @@ const handConnections: Array<[number, number]> = [
   [13, 17],
 ]
 
+const handOutlineIndices = [0, 1, 2, 3, 4, 8, 12, 16, 20, 17, 13, 9, 5]
 const minHandScore = 0.35
-const handMaskCloseRadius = 1
+const handMaskCloseRadius = 0
 
 export function createHandMaskRenderer(
   width: number,
@@ -158,23 +159,25 @@ function estimateHandRadius(points: Array<{ x: number; y: number }>) {
     distance(indexMcp, pinkyMcp)
   )
 
-  return clamp(palmSpan * 0.22, 4, 22)
+  return clamp(palmSpan * 0.18, 3, 18)
 }
 
 function drawHandSilhouette(
   points: Array<{ x: number; y: number }>,
   ctx: CanvasRenderingContext2D
 ) {
-  const hull = buildConvexHull(points)
+  const outlinePoints = handOutlineIndices
+    .map((index) => points[index])
+    .filter((point): point is { x: number; y: number } => point !== undefined)
 
-  if (hull.length < 3) {
+  if (outlinePoints.length < 3) {
     return
   }
 
   ctx.beginPath()
-  ctx.moveTo(hull[0].x, hull[0].y)
-  for (let i = 1; i < hull.length; i++) {
-    ctx.lineTo(hull[i].x, hull[i].y)
+  ctx.moveTo(outlinePoints[0].x, outlinePoints[0].y)
+  for (let i = 1; i < outlinePoints.length; i++) {
+    ctx.lineTo(outlinePoints[i].x, outlinePoints[i].y)
   }
   ctx.closePath()
   ctx.fill()
@@ -206,7 +209,7 @@ function drawPalm(
   center.y /= palmPoints.length
 
   ctx.beginPath()
-  ctx.arc(center.x, center.y, radius * 1.2, 0, Math.PI * 2)
+  ctx.arc(center.x, center.y, radius * 1.0, 0, Math.PI * 2)
   ctx.fill()
 
   for (const index of [0, 1, 2, 3, 4, 5, 9, 13, 17]) {
@@ -216,7 +219,7 @@ function drawPalm(
     }
 
     ctx.beginPath()
-    ctx.arc(point.x, point.y, index === 0 ? radius * 1.15 : radius * 0.8, 0, Math.PI * 2)
+    ctx.arc(point.x, point.y, index === 0 ? radius * 1.0 : radius * 0.55, 0, Math.PI * 2)
     ctx.fill()
   }
 }
@@ -233,14 +236,14 @@ function drawWristBridge(
     return
   }
 
-  ctx.lineWidth = radius * 1.65
+  ctx.lineWidth = radius * 1.1
   ctx.beginPath()
   ctx.moveTo(wrist.x, wrist.y)
   ctx.lineTo(palmCenter.x, palmCenter.y)
   ctx.stroke()
 
   ctx.beginPath()
-  ctx.arc(wrist.x, wrist.y, radius * 1.35, 0, Math.PI * 2)
+  ctx.arc(wrist.x, wrist.y, radius * 1.0, 0, Math.PI * 2)
   ctx.fill()
 }
 
@@ -273,7 +276,7 @@ function drawSkeleton(
   radius: number,
   ctx: CanvasRenderingContext2D
 ) {
-  ctx.lineWidth = radius * 1.15
+  ctx.lineWidth = radius * 0.8
 
   for (const [startIndex, endIndex] of handConnections) {
     const start = points[startIndex]
@@ -291,44 +294,9 @@ function drawSkeleton(
 
   for (const point of points) {
     ctx.beginPath()
-    ctx.arc(point.x, point.y, radius * 0.75, 0, Math.PI * 2)
+    ctx.arc(point.x, point.y, radius * 0.5, 0, Math.PI * 2)
     ctx.fill()
   }
-}
-
-function buildConvexHull(points: Array<{ x: number; y: number }>) {
-  const sortedPoints = [...points].sort(
-    (a, b) => a.x - b.x || a.y - b.y
-  )
-
-  if (sortedPoints.length < 3) {
-    return sortedPoints
-  }
-
-  const hull: Array<{ x: number; y: number }> = []
-
-  for (const point of sortedPoints) {
-    while (hull.length >= 2 && cross(hull[hull.length - 2], hull[hull.length - 1], point) <= 0) {
-      hull.pop()
-    }
-    hull.push(point)
-  }
-
-  const lowerHullLength = hull.length
-
-  for (let i = sortedPoints.length - 2; i >= 0; i--) {
-    const point = sortedPoints[i]
-    while (
-      hull.length > lowerHullLength &&
-      cross(hull[hull.length - 2], hull[hull.length - 1], point) <= 0
-    ) {
-      hull.pop()
-    }
-    hull.push(point)
-  }
-
-  hull.pop()
-  return hull
 }
 
 function closeMask(
@@ -340,14 +308,6 @@ function closeMask(
 ) {
   dilateMask(source, destination, width, height, radius)
   erodeMask(destination, source, width, height, radius)
-}
-
-function cross(
-  origin: { x: number; y: number },
-  a: { x: number; y: number },
-  b: { x: number; y: number }
-) {
-  return (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x)
 }
 
 function erodeMask(
