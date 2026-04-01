@@ -244,6 +244,10 @@ function smoothstep(edge0: number, edge1: number, value: number) {
   return t * t * (3 - 2 * t)
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
 function computeDistanceBoost(previousForegroundCoverage: number) {
   const coverageTarget = 0.18
   return clamp(
