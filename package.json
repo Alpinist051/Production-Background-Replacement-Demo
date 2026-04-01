@@ -6,12 +6,15 @@
   "author": "Volcomix <Volcomix@users.noreply.github.com>",
   "license": "MIT",
   "private": true,
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "dependencies": {
     "@tensorflow-models/body-pix": "^2.0.5",
     "@tensorflow-models/hand-pose-detection": "^2.0.1",
     "@tensorflow/tfjs": "^4.2.0",
     "@types/emscripten": "^1.39.6",
-    "@types/node": "^18.11.18",
+    "@types/node": "^20.19.0",
     "@vue/compiler-sfc": "^3.5.31",
     "typescript": "^4.9.4",
     "vue": "^3.5.31"
